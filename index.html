@@ -5,6 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>✿ Return-to-Eternity ✿</title>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Cinzel:wght@400;700&family=Noto+Serif+JP:wght@200;400;600&family=Noto+Serif+KR:wght@300;500&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK (modular v10) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, deleteDoc, doc,
+    query, orderBy, serverTimestamp, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDl2QOgRyljLWrTriL5C7QlLcRggbumygU",
+    authDomain: "return-to-eternity.firebaseapp.com",
+    projectId: "return-to-eternity",
+    storageBucket: "return-to-eternity.firebasestorage.app",
+    messagingSenderId: "111651370921",
+    appId: "1:111651370921:web:07739ffb0d2be69611f6b8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // expose helpers to global scope so our regular scripts can use them
+  window.fb = {
+    db,
+    collection, addDoc, getDocs, deleteDoc, doc,
+    query, orderBy, serverTimestamp, onSnapshot
+  };
+  window.fbReady = true;
+  // notify listeners
+  document.dispatchEvent(new Event('fb-ready'));
+</script>
+
 <style>
   /* Galmuri11 — Korean+Japanese pixel font by quiple
      Loaded from jsDelivr (GitHub) which is more reliable than custom CDNs */
@@ -1279,8 +1311,7 @@ const DEFAULT_STATE = {
   ddays: [], banners: [],
   homeImage: '',
   shimeji: 'https://i.imgur.com/GHiBIbu.png',
-  yukiPet: { idle: '', happy: '' },  // images for the pet (idle & happy)
-  guests: [],
+  yukiPet: { idle: '', happy: '' },
   profileLinks: [],
   notice: { img: '', text: '' },
   dF: 'log', aF: 'all',
@@ -1509,7 +1540,13 @@ function showSec(id) {
   if (id === 'album') renderAlbum();
   if (id === 'about') renderProfileLinks();
   if (id === 'notice') renderNotice();
-  if (id === 'guest') { renderGuests(); renderPetImage(); renderPetProgress(); }
+  if (id === 'guest') {
+    renderPetImage(); renderPetProgress();
+    if (window.fbReady) startGuestListener();
+    else renderGuests(); // shows "연결 중..."
+  } else {
+    stopGuestListener();
+  }
   if (id === 'home') { renderDdays(); renderBanners(); renderHomeImage(); shimejiGreetSection('home'); }
 }
 
@@ -1933,23 +1970,77 @@ function savePetImg() {
   sv(); renderPetImage(); closeMo('moPetImg');
 }
 
-// ──────── GUESTBOOK ────────
-function submitGuest() {
+// ──────── GUESTBOOK (Firebase Firestore) ────────
+let guestCache = [];
+let guestUnsubscribe = null;
+let guestLoading = false;
+
+function startGuestListener() {
+  if (!window.fbReady) return;
+  if (guestUnsubscribe) return; // already listening
+  const { db, collection, query, orderBy, onSnapshot } = window.fb;
+  const q = query(collection(db, 'guestbook'), orderBy('createdAt', 'desc'));
+  guestUnsubscribe = onSnapshot(q, async (snap) => {
+    const entries = [];
+    for (const docSnap of snap.docs) {
+      const data = docSnap.data();
+      // fetch replies for this entry
+      const repliesSnap = await window.fb.getDocs(
+        window.fb.query(
+          window.fb.collection(db, 'guestbook', docSnap.id, 'replies'),
+          window.fb.orderBy('createdAt', 'asc')
+        )
+      );
+      const replies = repliesSnap.docs.map(r => ({
+        id: r.id, ...r.data()
+      }));
+      entries.push({ id: docSnap.id, ...data, replies });
+    }
+    guestCache = entries;
+    renderGuests();
+  }, (err) => {
+    console.error('Guestbook listener error:', err);
+    document.getElementById('guestList').innerHTML =
+      '<div class="guest-empty">방명록을 불러올 수 없어요.<br>잠시 후 다시 시도해주세요.</div>';
+  });
+}
+
+function stopGuestListener() {
+  if (guestUnsubscribe) { guestUnsubscribe(); guestUnsubscribe = null; }
+}
+
+async function submitGuest() {
+  if (!window.fbReady) { alert('아직 연결 중이에요. 잠시 후 다시 시도해주세요.'); return; }
+  if (guestLoading) return;
   const name = document.getElementById('gName').value.trim();
   const msg = document.getElementById('gMsg').value.trim();
   if (!name || !msg) { alert('닉네임과 메시지를 모두 입력해주세요.'); return; }
-  S.guests.unshift({
-    id: Date.now(),
-    name, msg,
-    date: formatGuestDate(new Date()),
-    replies: []
-  });
-  sv();
-  document.getElementById('gName').value = '';
-  document.getElementById('gMsg').value = '';
-  renderGuests();
+  if (name.length > 30) { alert('닉네임은 30자 이내로 입력해주세요.'); return; }
+  if (msg.length > 1000) { alert('메시지는 1000자 이내로 입력해주세요.'); return; }
+  guestLoading = true;
+  try {
+    const { db, collection, addDoc, serverTimestamp } = window.fb;
+    await addDoc(collection(db, 'guestbook'), {
+      name, msg,
+      createdAt: serverTimestamp()
+    });
+    document.getElementById('gName').value = '';
+    document.getElementById('gMsg').value = '';
+  } catch(err) {
+    console.error(err);
+    alert('등록 중 오류가 발생했어요. 다시 시도해주세요.');
+  } finally {
+    guestLoading = false;
+  }
 }
-function formatGuestDate(d) {
+
+function formatGuestDate(ts) {
+  let d;
+  if (!ts) return '...';
+  if (ts.toDate) d = ts.toDate();
+  else if (ts.seconds) d = new Date(ts.seconds * 1000);
+  else d = new Date(ts);
+  if (isNaN(d.getTime())) return '...';
   const y = d.getFullYear();
   const mo = d.getMonth() + 1;
   const da = d.getDate();
@@ -1960,76 +2051,111 @@ function formatGuestDate(d) {
   h = h % 12; if (h === 0) h = 12;
   return `${y}. ${mo}. ${da}. ${ampm} ${h}:${mi}:${s}`;
 }
+
 function renderGuests() {
   const list = document.getElementById('guestList');
   if (!list) return;
-  if (!S.guests || !S.guests.length) {
+  if (!window.fbReady) {
+    list.innerHTML = '<div class="guest-empty">연결 중...</div>';
+    return;
+  }
+  if (!guestCache.length) {
     list.innerHTML = '<div class="guest-empty">아직 방명록이 없어요.<br>첫 메시지를 남겨주세요 ❀</div>';
     return;
   }
-  list.innerHTML = S.guests.map(g => `
+  list.innerHTML = guestCache.map(g => `
     <div class="guest-entry">
       <div class="guest-head">
         <span class="guest-name">${escapeHtml(g.name)}</span>
-        <span class="guest-date">(${escapeHtml(g.date)})</span>
+        <span class="guest-date">(${escapeHtml(formatGuestDate(g.createdAt))})</span>
       </div>
       <div class="guest-body">${escapeHtml(g.msg)}</div>
       <div class="guest-actions">
-        <button onclick="toggleGuestReply(${g.id})">답글</button>
-        <button onclick="delGuest(${g.id})">삭제</button>
+        <button onclick="toggleGuestReply('${g.id}')">답글</button>
+        ${isAdmin() ? `<button onclick="delGuest('${g.id}')">삭제</button>` : ''}
       </div>
       <div class="guest-reply-form" id="replyForm_${g.id}">
-        <input type="text" id="replyName_${g.id}" placeholder="닉네임" maxlength="20">
-        <textarea id="replyMsg_${g.id}" placeholder="답글 내용" maxlength="500"></textarea>
+        <input type="text" id="replyName_${g.id}" placeholder="닉네임" maxlength="30">
+        <textarea id="replyMsg_${g.id}" placeholder="답글 내용" maxlength="1000"></textarea>
         <div style="text-align:right;">
-          <button class="guest-submit" onclick="submitReply(${g.id})">등록</button>
+          <button class="guest-submit" onclick="submitReply('${g.id}')">등록</button>
         </div>
       </div>
       ${(g.replies || []).map(r => `
         <div class="guest-entry reply" style="margin-top:0.8rem;">
           <div class="guest-head">
             <span class="guest-name">└ ${escapeHtml(r.name)}</span>
-            <span class="guest-date">(${escapeHtml(r.date)})</span>
+            <span class="guest-date">(${escapeHtml(formatGuestDate(r.createdAt))})</span>
           </div>
           <div class="guest-body">${escapeHtml(r.msg)}</div>
-          <div class="guest-actions">
-            <button onclick="delReply(${g.id}, ${r.id})">삭제</button>
-          </div>
+          ${isAdmin() ? `<div class="guest-actions"><button onclick="delReply('${g.id}', '${r.id}')">삭제</button></div>` : ''}
         </div>
       `).join('')}
     </div>
   `).join('');
 }
+
 function toggleGuestReply(id) {
   const form = document.getElementById('replyForm_' + id);
   if (form) form.classList.toggle('open');
 }
-function submitReply(parentId) {
+
+async function submitReply(parentId) {
+  if (!window.fbReady) { alert('아직 연결 중이에요.'); return; }
   const name = document.getElementById('replyName_' + parentId).value.trim();
   const msg = document.getElementById('replyMsg_' + parentId).value.trim();
   if (!name || !msg) { alert('닉네임과 답글을 모두 입력해주세요.'); return; }
-  const parent = S.guests.find(g => g.id === parentId);
-  if (!parent) return;
-  if (!parent.replies) parent.replies = [];
-  parent.replies.push({
-    id: Date.now(),
-    name, msg,
-    date: formatGuestDate(new Date())
-  });
-  sv(); renderGuests();
+  if (name.length > 30) { alert('닉네임은 30자 이내로 입력해주세요.'); return; }
+  if (msg.length > 1000) { alert('답글은 1000자 이내로 입력해주세요.'); return; }
+  try {
+    const { db, collection, addDoc, serverTimestamp } = window.fb;
+    await addDoc(collection(db, 'guestbook', parentId, 'replies'), {
+      name, msg,
+      createdAt: serverTimestamp()
+    });
+    document.getElementById('replyName_' + parentId).value = '';
+    document.getElementById('replyMsg_' + parentId).value = '';
+  } catch(err) {
+    console.error(err);
+    alert('답글 등록 중 오류가 발생했어요.');
+  }
 }
-function delGuest(id) {
-  if (!confirm('이 방명록을 삭제하시겠어요?')) return;
-  S.guests = S.guests.filter(g => g.id !== id);
-  sv(); renderGuests();
+
+async function delGuest(id) {
+  if (!isAdmin()) { alert('삭제는 관리자만 가능해요.'); return; }
+  if (!confirm('이 방명록을 삭제하시겠어요?\n(답글도 함께 사라져요)')) return;
+  try {
+    const { db, doc, deleteDoc, collection, getDocs } = window.fb;
+    // delete all replies first
+    const repSnap = await getDocs(collection(db, 'guestbook', id, 'replies'));
+    for (const r of repSnap.docs) {
+      await deleteDoc(doc(db, 'guestbook', id, 'replies', r.id));
+    }
+    // then delete the parent
+    await deleteDoc(doc(db, 'guestbook', id));
+  } catch(err) {
+    console.error(err);
+    alert('삭제 권한이 없거나 오류가 발생했어요.\nFirebase 콘솔에서 직접 삭제해주세요.');
+  }
 }
-function delReply(parentId, replyId) {
+
+async function delReply(parentId, replyId) {
+  if (!isAdmin()) { alert('삭제는 관리자만 가능해요.'); return; }
   if (!confirm('이 답글을 삭제하시겠어요?')) return;
-  const parent = S.guests.find(g => g.id === parentId);
-  if (!parent || !parent.replies) return;
-  parent.replies = parent.replies.filter(r => r.id !== replyId);
-  sv(); renderGuests();
+  try {
+    const { db, doc, deleteDoc } = window.fb;
+    await deleteDoc(doc(db, 'guestbook', parentId, 'replies', replyId));
+  } catch(err) {
+    console.error(err);
+    alert('삭제 권한이 없거나 오류가 발생했어요.');
+  }
 }
+
+// start listener when fb is ready
+document.addEventListener('fb-ready', () => {
+  // only start if user is currently on guest page (or about to be)
+  if (document.querySelector('#guest.active')) startGuestListener();
+});
 
 // ──────── BACKUP / RESTORE ────────
 function openBackup() {
@@ -2122,7 +2248,7 @@ function reloadAll() {
   document.getElementById('mTrack').textContent = S.music.url ? '♪ ' + S.music.name : '♪ standby';
   renderHomeImage(); renderDdays(); renderBanners();
   renderDiary(); renderAlbum(); renderProfileLinks(); renderNotice();
-  renderShimeji(); renderGuests(); renderPetImage(); renderPetProgress();
+  renderShimeji(); renderPetImage(); renderPetProgress();
 }
 
 // ──────── MODALS ────────
@@ -2243,7 +2369,7 @@ if (S.music.url) document.getElementById('mTrack').textContent = '♪ ' + S.musi
 document.body.classList.add('home-active');
 renderHomeImage(); renderDdays(); renderBanners();
 renderDiary(); renderAlbum(); renderProfileLinks(); renderNotice();
-renderShimeji(); renderGuests(); renderPetImage(); renderPetProgress();
+renderShimeji(); renderPetImage(); renderPetProgress();
 spawnPetals();
 tryPlay();
 // initial shimeji greeting
