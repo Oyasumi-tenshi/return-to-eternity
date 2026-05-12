@@ -348,30 +348,56 @@
   }
 
   .home-image-box {
-    width: 100%; max-width: 720px; margin: 0 auto;
-    border: 1px solid var(--rim); position: relative; overflow: hidden;
-    border-radius: 2px; background: var(--surf);
+    width: 100%; max-width: 520px; margin: 0 auto;
+    position: relative;
+    background: transparent;
+    border: none;
+    overflow: visible;
     animation: fadeUp 0.8s 0.2s ease both;
   }
   .home-image-inner {
-    aspect-ratio: 16/10; background: var(--img-bg);
+    width: 100%;
+    min-height: 280px;
+    background: transparent;
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden; position: relative;
+    overflow: visible;
+    position: relative;
   }
-  .home-image-inner img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
-  .home-image-box:hover .home-image-inner img { transform: scale(1.02); }
+  .home-image-inner img {
+    max-width: 100%;
+    max-height: 420px;
+    width: auto; height: auto;
+    object-fit: contain;
+    transition: transform 0.6s ease;
+    filter: drop-shadow(0 10px 30px rgba(232, 122, 152, 0.18));
+    display: block;
+  }
+  .home-image-box:hover .home-image-inner img { transform: translateY(-3px); }
   .home-image-empty {
     font-family: var(--eng-font); letter-spacing: 0.3em;
     color: var(--text2); font-size: 0.75rem;
+    padding: 3rem 1rem;
+    border: 1px dashed var(--rim);
+    border-radius: 3px;
+    background: var(--surf);
   }
   .home-image-box.editable { cursor: pointer; }
-  .home-image-box.editable:hover { border-color: var(--sakura); }
+  .home-image-box.editable:hover .home-image-inner img {
+    filter: drop-shadow(0 10px 30px rgba(232, 122, 152, 0.35));
+  }
+  .home-image-box.editable .home-image-empty:hover {
+    border-color: var(--sakura);
+    color: var(--sakura);
+  }
 
   .dday-strip {
-    background: rgba(0, 0, 0, 0.2); padding: 0.75rem 1rem;
+    max-width: 520px; margin: 1.5rem auto 0;
+    padding: 0.75rem 1.2rem;
     display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem;
     border-top: 1px solid var(--rim);
+    border-bottom: 1px solid var(--rim);
     min-height: 38px; align-items: center;
+    background: transparent;
   }
   [data-theme="light"] .dday-strip { background: rgba(255, 255, 255, 0.5); }
   .dday-mini { display: flex; align-items: baseline; gap: 0.35rem; }
@@ -1033,8 +1059,8 @@
       <div class="home-image-inner" id="homeImageInner">
         <span class="home-image-empty">IMAGE ARCHIVE</span>
       </div>
-      <div class="dday-strip" id="ddayStrip"></div>
     </div>
+    <div class="dday-strip" id="ddayStrip"></div>
     <div class="admin-only home-actions">
       <button class="btn-g" onclick="openDday()">D-Day</button>
       <button class="btn-g" onclick="editMotto()">Motto</button>
