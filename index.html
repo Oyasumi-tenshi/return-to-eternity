@@ -540,6 +540,58 @@
     opacity: 0; transition: opacity 0.2s;
   }
   .a-card:hover .a-del { opacity: 1; }
+
+  /* NSFW blur */
+  .a-img.nsfw-blur img {
+    filter: blur(28px) brightness(0.85);
+    transition: filter 0.4s ease;
+  }
+  .a-img.nsfw-blur.revealed img {
+    filter: blur(0) brightness(1);
+  }
+  .a-card.nsfw .a-img::after {
+    content: 'NSFW';
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--eng-font); font-size: 0.85rem;
+    letter-spacing: 0.3em; color: rgba(255, 255, 255, 0.9);
+    padding: 0.4rem 1rem; border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 2px; backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .a-card.nsfw .a-img.revealed::after { opacity: 0; }
+  .a-card.nsfw .a-img { position: relative; }
+  .nsfw-badge {
+    position: absolute; bottom: 0.5rem; right: 0.5rem;
+    background: rgba(176, 73, 104, 0.85); color: white;
+    font-size: 0.58rem; padding: 0.1rem 0.45rem;
+    border-radius: 20px; font-family: var(--eng-font);
+    letter-spacing: 0.1em; backdrop-filter: blur(6px);
+    z-index: 2;
+  }
+  /* NSFW toggle in toolbar */
+  .nsfw-toggle {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    margin-left: 0.5rem;
+    font-family: var(--eng-font); font-size: 0.68rem;
+    letter-spacing: 0.12em; color: var(--text2);
+    cursor: pointer; user-select: none;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--rim); border-radius: 1px;
+    transition: 0.3s;
+  }
+  .nsfw-toggle:hover { border-color: var(--sakura); color: var(--sakura); }
+  .nsfw-toggle.on {
+    background: rgba(232, 122, 152, 0.12);
+    border-color: var(--bloom); color: var(--sakura);
+  }
+  .nsfw-toggle .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--rim2); transition: 0.3s;
+  }
+  .nsfw-toggle.on .dot { background: var(--bloom); }
   .a-del:hover { background: var(--deep); }
 
   /* ──────── BANNERS ──────── */
@@ -606,8 +658,13 @@
   .notice-img { margin-bottom: 1.3rem; text-align: center; }
   .notice-img img { max-width: 100%; max-height: 360px; border-radius: 2px; }
   .notice-text {
-    font-family: var(--main-font); font-size: 0.9rem;
-    line-height: 2; color: var(--text); white-space: pre-wrap;
+    font-family: 'Galmuri11', 'NeoDunggeunmo', monospace;
+    font-size: 14px;
+    line-height: 22px;
+    color: var(--text); white-space: pre-wrap;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
+    font-smooth: never;
   }
   .notice-empty {
     text-align: center; padding: 2rem 1rem;
@@ -648,12 +705,17 @@
   }
   .pet-info { flex: 1; min-width: 0; }
   .pet-title {
-    font-family: var(--main-font); font-weight: 600;
-    font-size: 0.95rem; color: var(--sakura); margin-bottom: 0.3rem;
+    font-family: 'Galmuri11', 'NeoDunggeunmo', monospace;
+    font-size: 14px; color: var(--sakura); margin-bottom: 0.5rem;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
   }
   .pet-desc {
-    font-family: var(--main-font); font-size: 0.78rem;
-    color: var(--text2); line-height: 1.6; margin-bottom: 0.8rem;
+    font-family: 'Galmuri11', 'NeoDunggeunmo', monospace;
+    font-size: 13px;
+    color: var(--text2); line-height: 1.8; margin-bottom: 0.8rem;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
   }
   .pet-progress-wrap {
     display: flex; align-items: center; gap: 0.6rem;
@@ -1092,6 +1154,9 @@
       <button class="f-btn on" onclick="fAlbum('all',this)">All</button>
       <button class="f-btn" onclick="fAlbum('commission',this)">Commission</button>
       <button class="f-btn" onclick="fAlbum('self',this)">Self</button>
+      <div class="nsfw-toggle" id="nsfwToggle" onclick="toggleNsfwReveal()" title="show / hide NSFW">
+        <span class="dot"></span><span>NSFW</span>
+      </div>
       <button class="btn-p admin-only btn-add-right" onclick="openAlbumModal()">+ New</button>
     </div>
     <div class="a-grid" id="aGrid"></div>
@@ -1235,6 +1300,12 @@
   </div>
   <div class="fg"><label>Image URL</label><input type="text" id="aImg" placeholder="https://..."></div>
   <div class="fg"><label>Artist</label><input type="text" id="aArt" placeholder="optional"></div>
+  <div class="fg" style="display:flex; align-items:center; gap:0.6rem;">
+    <input type="checkbox" id="aNsfw" style="width:auto; margin:0; transform:scale(1.2); accent-color:var(--bloom);">
+    <label for="aNsfw" style="margin:0; cursor:pointer; font-family:var(--eng-font); font-size:0.75rem; letter-spacing:0.15em;">
+      NSFW / blur this artwork
+    </label>
+  </div>
   <div class="mo-ft"><button class="btn-g" onclick="closeMo('moAlbum')">Cancel</button><button class="btn-p" onclick="saveAlbum()">Save</button></div>
 </div></div>
 
@@ -1327,7 +1398,7 @@
 // Visitors see this data. Owner can press F2 / tap logo 5x to switch
 // to admin mode (which uses their own localStorage).
 // ════════════════════════════════════════════════════════════════════
-const SHARED_DATA = /*__SHARED_DATA_START__*/ {"diary":[],"album":[{"id":1778556419789,"title":"残っていたのかな···","img":"https://i.imgur.com/LtcyUZ8.png","cat":"commission","artist":"엉딸님","date":"2026-05-12"},{"id":1778556341564,"title":"今は忙しい。","img":"https://i.imgur.com/NtO0BAF.png","cat":"commission","artist":"례님","date":"2026-05-12"},{"id":1778556019710,"title":"おやすみ","img":"https://i.imgur.com/bOq4PCv.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555938203,"title":"Magazine","img":"https://i.imgur.com/tuk15OG.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555861987,"title":"8반 이쁜이(뒤)","img":"https://i.imgur.com/CksskUw.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555769057,"title":"다녀오셨어요","img":"https://i.imgur.com/gpgXbuF.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555741390,"title":"다녀올게","img":"https://i.imgur.com/u4gQFyt.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555700845,"title":"사실상 기만이죠 이건","img":"https://i.imgur.com/U7N3Qdk.png","cat":"self","artist":"トレース","date":"2026-05-12"},{"id":1778555632823,"title":"외모지상주의 남매","img":"https://i.imgur.com/nfFTmWR.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555575779,"title":"人形姫","img":"https://i.imgur.com/T6pVhHE.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555529994,"title":"犬が二匹","img":"https://i.imgur.com/f3f9v8W.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555470950,"title":"Swap !","img":"https://i.imgur.com/uiaxTS1.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555401307,"title":"どちが好き？","img":"https://i.imgur.com/BK0qXKG.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555337659,"title":"ぐるぐる~","img":"https://i.imgur.com/U385caI.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555212517,"title":"무력감","img":"https://i.imgur.com/7DW5pRT.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555086251,"title":"말끼","img":"https://i.imgur.com/EcjsM2Z.png","cat":"self","artist":"","date":"2026-05-12"}],"jp":"永遠への回帰","music":{"url":"https://oyasumi-tenshi.github.io/return-to-eternity/bgm.mp3","name":"bgm"},"ddays":[{"label":"❄ c. 유자님","date":"2025-03-08"}],"banners":[],"homeImage":"https://i.imgur.com/TJxpkjM.png","shimeji":"https://i.imgur.com/GHiBIbu.png","yukiPet":{"idle":"https://i.imgur.com/Gk0hnTT.png","happy":""},"profileLinks":[],"notice":{"img":"https://i.imgur.com/xat3PF1.png","text":"c. 췡님\n\n💌 켸쨩, 켸님, non... anything!\n\n(前)러비더비 --> (現)Lumo\nAI 채팅 캐릭터 '타카하라 류지(w. 비타님)'의 드림 페어 홈페이지입니다.\n\nDiary 페이지에 기록되는 모든 그림과 Log, Etc... AI가 아닌 개인 창작과 커미션 작업물입니다.\n\n무단 전재 및 재게시 금지합니다.\n\n\n\n⚠ Warning\n* 소재 주의 *\n(근친, 납치, 감금, 사망, 회귀 등)\n성장기 시절 제외 기본적으로 CP 무드를 상정하고 있습니다."},"theme":"light","guests":[{"id":1778510138886,"name":"🌸","msg":"Test","date":"2026. 5. 11. 오후 11:35:38","replies":[{"id":1778510173487,"name":"🐉","msg":"Test.","date":"2026. 5. 11. 오후 11:36:13"}]}]} /*__SHARED_DATA_END__*/;
+const SHARED_DATA = /*__SHARED_DATA_START__*/ {} /*__SHARED_DATA_END__*/;
 
 // ──────── STATE ────────
 const DEFAULT_STATE = {
@@ -1341,6 +1412,7 @@ const DEFAULT_STATE = {
   profileLinks: [],
   notice: { img: '', text: '' },
   dF: 'log', aF: 'all',
+  nsfwReveal: false,
   searchQ: '',
   editId: null, curId: null,
   theme: null,
@@ -1747,6 +1819,7 @@ const acL = { commission:'Commission', self:'Self' };
 function openAlbumModal() {
   ['aTit','aImg','aArt'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('aCat').value = 'commission';
+  document.getElementById('aNsfw').checked = false;
   openMo('moAlbum');
 }
 function saveAlbum() {
@@ -1757,10 +1830,10 @@ function saveAlbum() {
     id: Date.now(), title, img,
     cat: document.getElementById('aCat').value,
     artist: document.getElementById('aArt').value.trim(),
+    nsfw: document.getElementById('aNsfw').checked,
     date: new Date().toLocaleDateString('en-CA')
   });
   sv(); renderAlbum(); closeMo('moAlbum');
-  
 }
 function fAlbum(f, btn) {
   S.aF = f;
@@ -1768,16 +1841,39 @@ function fAlbum(f, btn) {
   btn.classList.add('on');
   renderAlbum();
 }
+function toggleNsfwReveal() {
+  S.nsfwReveal = !S.nsfwReveal;
+  const tog = document.getElementById('nsfwToggle');
+  if (tog) tog.classList.toggle('on', S.nsfwReveal);
+  renderAlbum();
+}
+function revealOne(id) {
+  const card = document.querySelector(`[data-art-id="${id}"]`);
+  if (card) {
+    const img = card.querySelector('.a-img');
+    if (img) img.classList.toggle('revealed');
+  }
+}
 function renderAlbum() {
   const g = document.getElementById('aGrid');
   let list = S.aF === 'all' ? S.album : S.album.filter(a => a.cat === S.aF);
+  const tog = document.getElementById('nsfwToggle');
+  if (tog) tog.classList.toggle('on', S.nsfwReveal);
+
   if (!list.length) {
     g.innerHTML = `<div class="empty">no artwork yet.${isAdmin() ? '<br>+ new art to begin.' : ''}</div>`;
     return;
   }
-  g.innerHTML = list.map(a => `
-    <div class="a-card">
-      <div class="a-img" ${a.img ? `onclick="openLb('${escapeAttr(a.img)}','${escapeAttr(a.title)}')"` : ''}>
+  g.innerHTML = list.map(a => {
+    const isBlurred = a.nsfw && !S.nsfwReveal;
+    const clickAction = a.img
+      ? (isBlurred
+          ? `onclick="revealOne(${a.id})"`
+          : `onclick="openLb('${escapeAttr(a.img)}','${escapeAttr(a.title)}')"`)
+      : '';
+    return `
+    <div class="a-card ${a.nsfw ? 'nsfw' : ''}" data-art-id="${a.id}">
+      <div class="a-img ${isBlurred ? 'nsfw-blur' : ''}" ${clickAction}>
         ${a.img
           ? `<img src="${escapeAttr(a.img)}" alt="${escapeAttr(a.title)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
              <div class="a-ph" style="display:none;">🌸<span>image error</span></div>`
@@ -1786,9 +1882,10 @@ function renderAlbum() {
       </div>
       <div class="a-info">${escapeHtml(a.title)}${a.artist ? `<br><span style="font-size:0.7rem; color:var(--text2);">by ${escapeHtml(a.artist)}</span>` : ''}</div>
       <div class="a-badge">${acL[a.cat] || a.cat}</div>
-      ${isAdmin() ? `<button class="a-del admin-only" onclick="delAlbum(${a.id})" style="display:flex !important; align-items:center; justify-content:center;">✕</button>` : ''}
+      ${a.nsfw ? '<div class="nsfw-badge">NSFW</div>' : ''}
+      ${isAdmin() ? `<button class="a-del admin-only" onclick="event.stopPropagation();delAlbum(${a.id})" style="display:flex !important; align-items:center; justify-content:center;">✕</button>` : ''}
     </div>
-  `).join('');
+  `;}).join('');
 }
 function delAlbum(id) {
   if (!confirm('Delete this artwork?')) return;
