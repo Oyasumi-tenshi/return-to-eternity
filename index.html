@@ -126,8 +126,17 @@
     font-family: var(--main-font); font-size: 14px; line-height: 1.8;
     min-height: 100vh; overflow-x: hidden;
     transition: background-color 0.4s ease, color 0.4s ease;
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Ccircle cx='6' cy='6' r='2.5' fill='%23e87a98' opacity='0.6'/%3E%3C/svg%3E") 6 6, auto;
   }
+
+  /* ──────── ANIMATED CURSOR: Pink Spinning Flower ──────── */
+  @keyframes cursor-anim {
+    0.00% { cursor: url("data:image/webp;base64,UklGRogAAABXRUJQVlA4THsAAAAvH8AHECdAmG00f779Z3AKpyEgIfi/WQizjeZPOYD9DuDmPwD/O3NMcJxIchgtbAJqmBAcgCRHMEb5hzXiXveN6P8EDFblHDoz+hGHi8Gqy7eroIOqGtbqZCCzEo586MBYKHu+DD2fScaxzqpE4AvrwrKiAuhovu9bfysA") 0 0, auto; }
+    25.00% { cursor: url("data:image/webp;base64,UklGRoYAAABXRUJQVlA4THoAAAAvH8AHECdAmG00f779Z3AKpyEgIfi/WQizjeZPOYD9DuDmPwD/O3NMcNRGkiSVVAQqNAlhAPSBoFfFH1a25rXfiP5PQDHDp0nvoI9oLooZlzsjimlEFDTp0I2sg9D0jpo00PtDXxyOGk9ohkk3SqegsWI/zPDHzou/Eg==") 0 0, auto; }
+    50.00% { cursor: url("data:image/webp;base64,UklGRoYAAABXRUJQVlA4THkAAAAvH8AHECdAmG00f779Z3AKpyEgIfi/WQizjeZPOYD9DuDmPwD/O3NMcJVIkiU1tIFJKAkr4KWglvbvamu4r/uN6P8ELK7KGToz+hHDxuKqzacLoL+qlmVdkSxvwMZYE6HjNR2Y40WZlTHykCxkrkqXdXVU0JWfT/2vAA==") 0 0, auto; }
+    75.00% { cursor: url("data:image/webp;base64,UklGRogAAABXRUJQVlA4THwAAAAvH8AHECdAmG00f779Z3AKpyEgIfi/WQizjeZPOYD9DuDmPwD/O3NMYNRGkqORhsBOgLAEToMgLH9SF3r3dd+I/qtt24aRp/RyxpCLviVL+JsU3+DMwCkUfIeCURYoT1nfLUcKmCMr/ZuUWSkYbGyk4EYHf9j4EwXTb4kA") 0 0, auto; }
+  }
+  html { animation: cursor-anim 664ms step-end infinite; }
+  a, button, input, textarea, label, [role=button], select, option { cursor: inherit !important; }
 
   /* subtle bg texture */
   body::before {
