@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>✿ Return-to-Eternity ✿</title>
+<link rel="icon" type="image/png" href="https://oyasumi-tenshi.github.io/return-to-eternity/favicon.png">
+<link rel="shortcut icon" type="image/png" href="https://oyasumi-tenshi.github.io/return-to-eternity/favicon.png">
+<link rel="apple-touch-icon" href="https://oyasumi-tenshi.github.io/return-to-eternity/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Cinzel:wght@400;700&family=Noto+Serif+JP:wght@200;400;600&family=Noto+Serif+KR:wght@300;500&display=swap" rel="stylesheet">
 
 <!-- Firebase SDK (modular v10) -->
@@ -538,8 +541,19 @@
     color: white; width: 22px; height: 22px;
     border-radius: 50%; cursor: pointer; font-size: 0.7rem;
     opacity: 0; transition: opacity 0.2s;
+    z-index: 3;
   }
   .a-card:hover .a-del { opacity: 1; }
+  .a-edit {
+    position: absolute; top: 0.5rem; left: 2.2rem;
+    background: rgba(0, 0, 0, 0.6); border: none;
+    color: white; width: 22px; height: 22px;
+    border-radius: 50%; cursor: pointer; font-size: 0.75rem;
+    opacity: 0; transition: opacity 0.2s;
+    z-index: 3;
+  }
+  .a-card:hover .a-edit { opacity: 1; }
+  .a-edit:hover { background: var(--bloom); }
 
   /* NSFW blur */
   .a-img.nsfw-blur img {
@@ -1306,7 +1320,7 @@
       NSFW / blur this artwork
     </label>
   </div>
-  <div class="mo-ft"><button class="btn-g" onclick="closeMo('moAlbum')">Cancel</button><button class="btn-p" onclick="saveAlbum()">Save</button></div>
+  <div class="mo-ft"><button class="btn-g" onclick="S.editAlbumId=null;closeMo('moAlbum')">Cancel</button><button class="btn-p" onclick="saveAlbum()">Save</button></div>
 </div></div>
 
 <div class="mo" id="moBanner"><div class="mo-box">
@@ -1398,7 +1412,7 @@
 // Visitors see this data. Owner can press F2 / tap logo 5x to switch
 // to admin mode (which uses their own localStorage).
 // ════════════════════════════════════════════════════════════════════
-const SHARED_DATA = /*__SHARED_DATA_START__*/ {"diary":[],"album":[{"id":1778556419789,"title":"残っていたのかな···","img":"https://i.imgur.com/LtcyUZ8.png","cat":"commission","artist":"엉딸님","date":"2026-05-12"},{"id":1778556341564,"title":"今は忙しい。","img":"https://i.imgur.com/NtO0BAF.png","cat":"commission","artist":"례님","date":"2026-05-12"},{"id":1778556019710,"title":"おやすみ","img":"https://i.imgur.com/bOq4PCv.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555938203,"title":"Magazine","img":"https://i.imgur.com/tuk15OG.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555861987,"title":"8반 이쁜이(뒤)","img":"https://i.imgur.com/CksskUw.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555769057,"title":"다녀오셨어요","img":"https://i.imgur.com/gpgXbuF.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555741390,"title":"다녀올게","img":"https://i.imgur.com/u4gQFyt.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555700845,"title":"사실상 기만이죠 이건","img":"https://i.imgur.com/U7N3Qdk.png","cat":"self","artist":"トレース","date":"2026-05-12"},{"id":1778555632823,"title":"외모지상주의 남매","img":"https://i.imgur.com/nfFTmWR.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555575779,"title":"人形姫","img":"https://i.imgur.com/T6pVhHE.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555529994,"title":"犬が二匹","img":"https://i.imgur.com/f3f9v8W.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555470950,"title":"Swap !","img":"https://i.imgur.com/uiaxTS1.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555401307,"title":"どちが好き？","img":"https://i.imgur.com/BK0qXKG.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555337659,"title":"ぐるぐる~","img":"https://i.imgur.com/U385caI.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555212517,"title":"무력감","img":"https://i.imgur.com/7DW5pRT.png","cat":"self","artist":"","date":"2026-05-12"}],"jp":"永遠への回帰","music":{"url":"https://oyasumi-tenshi.github.io/return-to-eternity/bgm.mp3","name":"bgm"},"ddays":[{"label":"❄ c. 유자님","date":"2025-03-08"}],"banners":[],"homeImage":"https://i.imgur.com/TJxpkjM.png","shimeji":"https://i.imgur.com/GHiBIbu.png","yukiPet":{"idle":"https://i.imgur.com/Gk0hnTT.png","happy":""},"profileLinks":[],"notice":{"img":"https://i.imgur.com/xat3PF1.png","text":"c. 췡님\n\n💌 켸쨩, 켸님, non... anything!\n\n(前)러비더비 --> (現)Lumo\nAI 채팅 캐릭터 '타카하라 류지(w. 비타님)'의 드림 페어 홈페이지입니다.\n\nDiary 페이지에 기록되는 모든 그림과 Log, Etc... AI가 아닌 개인 창작과 커미션 작업물입니다.\n\n무단 전재 및 재게시 금지합니다.\n\n\n\n⚠ Warning\n* 소재 주의 *\n(근친, 납치, 감금, 사망, 회귀 등)\n성장기 시절 제외 기본적으로 CP 무드를 상정하고 있습니다."},"nsfwReveal":false,"theme":"light","guests":[{"id":1778510138886,"name":"🌸","msg":"Test","date":"2026. 5. 11. 오후 11:35:38","replies":[{"id":1778510173487,"name":"🐉","msg":"Test.","date":"2026. 5. 11. 오후 11:36:13"}]}]} /*__SHARED_DATA_END__*/;
+const SHARED_DATA = /*__SHARED_DATA_START__*/ {} /*__SHARED_DATA_END__*/;
 
 // ──────── STATE ────────
 const DEFAULT_STATE = {
@@ -1413,6 +1427,7 @@ const DEFAULT_STATE = {
   notice: { img: '', text: '' },
   dF: 'log', aF: 'all',
   nsfwReveal: false,
+  ownerName: '켸쨩',
   searchQ: '',
   editId: null, curId: null,
   theme: null,
@@ -1816,23 +1831,38 @@ function delDiary(id) {
 
 // ──────── ALBUM ────────
 const acL = { commission:'Commission', self:'Self' };
-function openAlbumModal() {
-  ['aTit','aImg','aArt'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('aCat').value = 'commission';
-  document.getElementById('aNsfw').checked = false;
+function openAlbumModal(id = null) {
+  S.editAlbumId = id;
+  const e = id ? S.album.find(a => a.id === id) : null;
+  document.querySelector('#moAlbum h3').textContent = id ? 'EDIT ART' : 'ADD ART';
+  document.getElementById('aTit').value = e?.title || '';
+  document.getElementById('aImg').value = e?.img || '';
+  document.getElementById('aArt').value = e?.artist || '';
+  document.getElementById('aCat').value = e?.cat || 'commission';
+  document.getElementById('aNsfw').checked = !!e?.nsfw;
   openMo('moAlbum');
 }
 function saveAlbum() {
   const title = document.getElementById('aTit').value.trim();
   const img = document.getElementById('aImg').value.trim();
   if (!title) { alert('Please enter a title.'); return; }
-  S.album.unshift({
-    id: Date.now(), title, img,
+  const data = {
+    title, img,
     cat: document.getElementById('aCat').value,
     artist: document.getElementById('aArt').value.trim(),
-    nsfw: document.getElementById('aNsfw').checked,
-    date: new Date().toLocaleDateString('en-CA')
-  });
+    nsfw: document.getElementById('aNsfw').checked
+  };
+  if (S.editAlbumId) {
+    const i = S.album.findIndex(a => a.id === S.editAlbumId);
+    if (i >= 0) S.album[i] = { ...S.album[i], ...data };
+  } else {
+    S.album.unshift({
+      id: Date.now(),
+      ...data,
+      date: new Date().toLocaleDateString('en-CA')
+    });
+  }
+  S.editAlbumId = null;
   sv(); renderAlbum(); closeMo('moAlbum');
 }
 function fAlbum(f, btn) {
@@ -1883,7 +1913,10 @@ function renderAlbum() {
       <div class="a-info">${escapeHtml(a.title)}${a.artist ? `<br><span style="font-size:0.7rem; color:var(--text2);">by ${escapeHtml(a.artist)}</span>` : ''}</div>
       <div class="a-badge">${acL[a.cat] || a.cat}</div>
       ${a.nsfw ? '<div class="nsfw-badge">NSFW</div>' : ''}
-      ${isAdmin() ? `<button class="a-del admin-only" onclick="event.stopPropagation();delAlbum(${a.id})" style="display:flex !important; align-items:center; justify-content:center;">✕</button>` : ''}
+      ${isAdmin() ? `
+        <button class="a-edit admin-only" onclick="event.stopPropagation();openAlbumModal(${a.id})" style="display:flex !important; align-items:center; justify-content:center;" title="edit">✎</button>
+        <button class="a-del admin-only" onclick="event.stopPropagation();delAlbum(${a.id})" style="display:flex !important; align-items:center; justify-content:center;" title="delete">✕</button>
+      ` : ''}
     </div>
   `;}).join('');
 }
@@ -2193,17 +2226,18 @@ function renderGuests() {
         <span class="guest-date">(${escapeHtml(formatGuestDate(g.createdAt))})</span>
       </div>
       <div class="guest-body">${escapeHtml(g.msg)}</div>
-      <div class="guest-actions">
-        <button onclick="toggleGuestReply('${g.id}')">답글</button>
-        ${isAdmin() ? `<button onclick="delGuest('${g.id}')">삭제</button>` : ''}
-      </div>
-      <div class="guest-reply-form" id="replyForm_${g.id}">
-        <input type="text" id="replyName_${g.id}" placeholder="닉네임" maxlength="30">
-        <textarea id="replyMsg_${g.id}" placeholder="답글 내용" maxlength="1000"></textarea>
-        <div style="text-align:right;">
-          <button class="guest-submit" onclick="submitReply('${g.id}')">등록</button>
+      ${isAdmin() ? `
+        <div class="guest-actions">
+          <button onclick="toggleGuestReply('${g.id}')">답글</button>
+          <button onclick="delGuest('${g.id}')">삭제</button>
         </div>
-      </div>
+        <div class="guest-reply-form" id="replyForm_${g.id}">
+          <textarea id="replyMsg_${g.id}" placeholder="답글 내용" maxlength="1000"></textarea>
+          <div style="text-align:right;">
+            <button class="guest-submit" onclick="submitReply('${g.id}')">등록</button>
+          </div>
+        </div>
+      ` : ''}
       ${(g.replies || []).map(r => `
         <div class="guest-entry reply" style="margin-top:0.8rem;">
           <div class="guest-head">
@@ -2224,19 +2258,18 @@ function toggleGuestReply(id) {
 }
 
 async function submitReply(parentId) {
+  if (!isAdmin()) { alert('답글은 관리자만 작성할 수 있어요.'); return; }
   if (!window.fbReady) { alert('아직 연결 중이에요.'); return; }
-  const name = document.getElementById('replyName_' + parentId).value.trim();
   const msg = document.getElementById('replyMsg_' + parentId).value.trim();
-  if (!name || !msg) { alert('닉네임과 답글을 모두 입력해주세요.'); return; }
-  if (name.length > 30) { alert('닉네임은 30자 이내로 입력해주세요.'); return; }
+  if (!msg) { alert('답글 내용을 입력해주세요.'); return; }
   if (msg.length > 1000) { alert('답글은 1000자 이내로 입력해주세요.'); return; }
+  const name = S.ownerName || '켸쨩';
   try {
     const { db, collection, addDoc, serverTimestamp } = window.fb;
     await addDoc(collection(db, 'guestbook', parentId, 'replies'), {
       name, msg,
       createdAt: serverTimestamp()
     });
-    document.getElementById('replyName_' + parentId).value = '';
     document.getElementById('replyMsg_' + parentId).value = '';
   } catch(err) {
     console.error(err);
@@ -2389,7 +2422,7 @@ document.querySelectorAll('.mo').forEach(el => {
 });
 
 // ──────── PARTICLES ────────
-const SFsym = ['°','˖','✿','❀','❅','❆','⋆'];
+const SFsym = ['✿','❀','❅','❆'];
 const SFcol = ['#f4a8bd','#e87a98','#fad4dd','#ffc1d3','#d97a96','#ffe4ec','#b04968'];
 document.addEventListener('click', e => {
   const tag = (e.target.tagName || '').toLowerCase();
@@ -2415,7 +2448,7 @@ document.addEventListener('click', e => {
 
 function spawnPetals() {
   const c = document.getElementById('petals');
-  const sym = ['°','˖','✿','❀','❅','❆','⋆'];
+  const sym = ['✿','❀','❅','❆'];
   for (let i = 0; i < 10; i++) {
     const p = document.createElement('div');
     p.className = 'petal';
