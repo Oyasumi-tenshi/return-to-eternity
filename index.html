@@ -611,20 +611,32 @@
   /* ──────── BANNERS ──────── */
   .banner-grid {
     margin-top: 4rem; display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 0.6rem;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 220px));
+    gap: 0.8rem;
+    justify-content: center;
+    align-items: center;
   }
   .banner-cell {
-    aspect-ratio: 5/2; background: var(--surf);
+    background: transparent;
     border: 1px solid var(--rim); border-radius: 2px;
     overflow: hidden; position: relative; cursor: pointer;
-    transition: all 0.25s; display: flex; align-items: center; justify-content: center;
+    transition: all 0.25s;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 50px;
+    padding: 4px;
   }
   .banner-cell:hover { border-color: var(--sakura); transform: translateY(-1px); }
-  .banner-cell img { width: 100%; height: 100%; object-fit: cover; }
+  .banner-cell img {
+    max-width: 100%;
+    max-height: 120px;
+    width: auto; height: auto;
+    object-fit: contain;
+    display: block;
+  }
   .banner-cell-empty {
     font-family: var(--eng-font); font-size: 0.65rem;
     color: var(--text2); letter-spacing: 0.1em;
+    padding: 1.5rem 1rem;
   }
   .banner-del {
     position: absolute; top: 3px; right: 3px;
