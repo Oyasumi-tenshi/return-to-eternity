@@ -461,6 +461,26 @@
     position: relative; backdrop-filter: blur(4px);
     border-radius: 2px; overflow: hidden;
   }
+  .d-thumb {
+    margin: -1.5rem -1.5rem 1rem; /* bleed to card edges */
+    height: 150px; overflow: hidden;
+    background: var(--img-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .d-thumb img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+  .d-card:hover .d-thumb img { transform: scale(1.04); }
+  .r-img {
+    margin: 1rem 0 1.3rem;
+    text-align: center;
+  }
+  .r-img img {
+    max-width: 100%; max-height: 420px;
+    border-radius: 3px; cursor: zoom-in;
+    filter: drop-shadow(0 6px 18px var(--shadow));
+  }
   .d-card::before {
     content: ''; position: absolute; left: 0; top: 0; bottom: 0;
     width: 2px; background: var(--sakura);
@@ -1283,6 +1303,7 @@
     </select>
   </div>
   <div class="fg"><label>Tags (comma separated)</label><input type="text" id="dTag" placeholder="e.g. OCname, character"></div>
+  <div class="fg"><label>Image URL (optional)</label><input type="text" id="dImg" placeholder="https://..."></div>
   <div class="fg"><label>Content</label><textarea id="dCon" rows="8"></textarea></div>
   <div class="mo-ft"><button class="btn-g" onclick="closeMo('moDiary')">Cancel</button><button class="btn-p" onclick="saveDiary()">Save</button></div>
 </div></div>
@@ -1291,6 +1312,7 @@
   <button class="mo-x" onclick="closeMo('moRead')">✕</button>
   <div class="r-meta"><span id="rDate"></span><span id="rCat"></span><span id="rTags"></span></div>
   <div class="r-tit" id="rTit"></div>
+  <div class="r-img" id="rImg" style="display:none;"></div>
   <div class="r-body" id="rBody"></div>
   <div class="mo-ft admin-only">
     <button class="btn-g" onclick="editCur()">Edit</button>
@@ -1433,7 +1455,7 @@
 // Visitors see this data. Owner can press F2 / tap logo 5x to switch
 // to admin mode (which uses their own localStorage).
 // ════════════════════════════════════════════════════════════════════
-const SHARED_DATA = /*__SHARED_DATA_START__*/ {"diary":[],"album":[{"id":1778556419789,"title":"残っていたのかな···","img":"https://i.imgur.com/LtcyUZ8.png","cat":"commission","artist":"엉딸님","date":"2026-05-12"},{"id":1778556341564,"title":"今は忙しい。","img":"https://i.imgur.com/NtO0BAF.png","cat":"commission","artist":"례님","date":"2026-05-12"},{"id":1778556019710,"title":"おやすみ","img":"https://i.imgur.com/bOq4PCv.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555938203,"title":"Magazine","img":"https://i.imgur.com/tuk15OG.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555861987,"title":"8반 이쁜이(뒤)","img":"https://i.imgur.com/CksskUw.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555769057,"title":"다녀오셨어요","img":"https://i.imgur.com/gpgXbuF.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555741390,"title":"다녀올게","img":"https://i.imgur.com/u4gQFyt.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555700845,"title":"사실상 기만이죠 이건","img":"https://i.imgur.com/U7N3Qdk.png","cat":"self","artist":"トレース","date":"2026-05-12"},{"id":1778555632823,"title":"외모지상주의 남매","img":"https://i.imgur.com/nfFTmWR.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555575779,"title":"人形姫","img":"https://i.imgur.com/T6pVhHE.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555529994,"title":"犬が二匹","img":"https://i.imgur.com/f3f9v8W.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555470950,"title":"Swap !","img":"https://i.imgur.com/uiaxTS1.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555401307,"title":"どちが好き？","img":"https://i.imgur.com/BK0qXKG.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555337659,"title":"ぐるぐる~","img":"https://i.imgur.com/U385caI.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555212517,"title":"무력감","img":"https://i.imgur.com/7DW5pRT.png","cat":"self","artist":"","date":"2026-05-12"}],"jp":"永遠への回帰","music":{"url":"https://oyasumi-tenshi.github.io/return-to-eternity/bgm.mp3","name":"bgm"},"ddays":[{"label":"❄ c. 유자님","date":"2025-03-08"}],"banners":[{"id":1778741818068,"img":"https://d2pqhom6oey9wx.cloudfront.net/img_resize/43835895068edec02b6b6e.jpg","link":"https://lastresort.naru.pub/","name":"옆집 오두막"}],"homeImage":"https://i.imgur.com/TJxpkjM.png","shimeji":"https://i.imgur.com/GHiBIbu.png","yukiPet":{"idle":"https://i.imgur.com/Gk0hnTT.png","happy":""},"profileLinks":[],"notice":{"img":"https://i.imgur.com/xat3PF1.png","text":"c. 췡님\n\n💌 켸쨩, 켸님, non... anything!\n\n(前)러비더비 --> (現)Lumo\nAI 채팅 캐릭터 '타카하라 류지(w. 비타님)'의 드림 페어 홈페이지입니다.\n\nDiary 페이지에 기록되는 모든 그림과 Log, Etc... AI가 아닌 개인 창작과 커미션 작업물입니다.\n\n무단 전재 및 재게시 금지합니다.\n\n\n\n⚠ Warning\n* 소재 주의 *\n(근친, 납치, 감금, 사망, 회귀 등)\n성장기 시절 제외 기본적으로 CP 무드를 상정하고 있습니다."},"nsfwReveal":false,"ownerName":"켸쨩","theme":"light","guests":[{"id":1778510138886,"name":"🌸","msg":"Test","date":"2026. 5. 11. 오후 11:35:38","replies":[{"id":1778510173487,"name":"🐉","msg":"Test.","date":"2026. 5. 11. 오후 11:36:13"}]}]} /*__SHARED_DATA_END__*/;
+const SHARED_DATA = /*__SHARED_DATA_START__*/ {} /*__SHARED_DATA_END__*/;
 
 // ──────── STATE ────────
 const DEFAULT_STATE = {
@@ -1532,7 +1554,16 @@ const shimejiMsgs = {
     morning: ['...아침이군.', '또 하루인가.', '...왜 이리 일찍.'],
     afternoon: ['...벌써 한낮인가.', '졸리군.', '...귀찮아.'],
     evening: ['해가 진다.', '...어두워졌군.', '조용해서 좋아.'],
-    night: ['...아직 깨어있나.', '잠이나 자.', '...밤이 좋군.']
+    night: ['...아직 깨어있나.', '잠이나 자.', '...밤이 좋군.'],
+    summer: [
+      '...덥군. 짜증나.',
+      '땀이 차. 최악이야.',
+      '유키, 그늘로 가.',
+      '매미가 시끄럽군.',
+      '...수박이나 썰어둬.',
+      '이런 날엔 아무것도 하기 싫어.',
+      '에어컨 앞에서 비키지 마.'
+    ]
   },
   yuki: {
     click: [
@@ -1549,9 +1580,29 @@ const shimejiMsgs = {
     morning: ['おはよう~ ☀', '좋은 아침이야!', '오늘도 잘 부탁해~'],
     afternoon: ['こんにちは~', '햇살이 따뜻해~', '낮잠 잘까~?'],
     evening: ['노을이 예뻐!', '오늘 어땠어?', '곧 별이 뜰 거야~'],
-    night: ['おやすみ... 💤', '꿈에서 만나~', '...졸려...']
+    night: ['おやすみ... 💤', '꿈에서 만나~', '...졸려...'],
+    summer: [
+      '여름이다~! 🌻',
+      '수박 먹고 싶어!',
+      '바다 가고 싶어~ 🌊',
+      '아이스크림 녹는다, 빨리빨리!',
+      '매미가 맴맴 울어~',
+      '오빠랑 불꽃놀이 보고 싶어! 🎆',
+      '풍경 소리 들려? 딸랑딸랑~',
+      '여름 유카타 입을래~ 🎐',
+      '시원한 보리차 어때?'
+    ]
   }
 };
+
+// returns season key by month (KR/JP northern hemisphere)
+function getSeasonKey() {
+  const m = new Date().getMonth() + 1; // 1-12
+  if (m >= 3 && m <= 5) return 'spring';
+  if (m >= 6 && m <= 8) return 'summer';
+  if (m >= 9 && m <= 11) return 'autumn';
+  return 'winter';
+}
 
 function getTimeKey() {
   const h = new Date().getHours();
@@ -1571,7 +1622,11 @@ function talkShimeji(side) {
   }
 
   const char = shimejiMsgs[side];
-  const pool = [...char.click, ...(char[getTimeKey()] || [])];
+  const pool = [
+    ...char.click,
+    ...(char[getTimeKey()] || []),
+    ...(char[getSeasonKey()] || [])
+  ];
   const msg = pool[Math.floor(Math.random() * pool.length)];
 
   const isLeft = (side === 'ryuji');
@@ -1768,6 +1823,7 @@ function openDiaryModal(id = null) {
   document.getElementById('dTit').value = e?.title || '';
   document.getElementById('dCat').value = e?.cat || S.dF || 'log';
   document.getElementById('dTag').value = e?.tags?.join(', ') || '';
+  document.getElementById('dImg').value = e?.img || '';
   document.getElementById('dCon').value = e?.content || '';
   openMo('moDiary');
 }
@@ -1777,17 +1833,18 @@ function saveDiary() {
   if (!title || !content) { alert('Please fill title and content.'); return; }
   const cat = document.getElementById('dCat').value;
   const tags = document.getElementById('dTag').value.split(',').map(t => t.trim()).filter(Boolean);
+  const img = document.getElementById('dImg').value.trim();
   if (S.editId) {
     const i = S.diary.findIndex(d => d.id === S.editId);
-    if (i >= 0) S.diary[i] = { ...S.diary[i], title, content, cat, tags };
+    if (i >= 0) S.diary[i] = { ...S.diary[i], title, content, cat, tags, img };
   } else {
     S.diary.unshift({
-      id: Date.now(), title, content, cat, tags,
-      date: new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
+      id: Date.now(), title, content, cat, tags, img,
+      date: new Date().toLocaleDateString('en-CA')
     });
   }
+  S.editId = null;
   sv(); renderDiary(); closeMo('moDiary');
-  
 }
 function fDiary(f, btn) {
   S.dF = f;
@@ -1818,6 +1875,7 @@ function renderDiary() {
     const tags = (d.tags || []).map(t => `<span class="tag-pill">${escapeHtml(t)}</span>`).join('');
     return `
       <div class="d-card" onclick="openRead(${d.id})">
+        ${d.img ? `<div class="d-thumb"><img src="${escapeAttr(d.img)}" alt="" onerror="this.parentElement.style.display='none'"></div>` : ''}
         <span class="d-cat">${catL[d.cat] || d.cat}</span>
         <span class="d-date">${d.date}</span>
         <div class="d-title">${escapeHtml(d.title)}</div>
@@ -1835,6 +1893,14 @@ function openRead(id) {
   document.getElementById('rDate').textContent = d.date;
   document.getElementById('rCat').textContent = catL[d.cat] || d.cat;
   document.getElementById('rTags').textContent = (d.tags && d.tags.length) ? '#' + d.tags.join(' #') : '';
+  const rImg = document.getElementById('rImg');
+  if (d.img) {
+    rImg.innerHTML = `<img src="${escapeAttr(d.img)}" alt="" onclick="openLb('${escapeAttr(d.img)}','${escapeAttr(d.title)}')" onerror="this.parentElement.style.display='none'">`;
+    rImg.style.display = 'block';
+  } else {
+    rImg.innerHTML = '';
+    rImg.style.display = 'none';
+  }
   document.getElementById('rBody').textContent = d.content;
   openMo('moRead');
 }
