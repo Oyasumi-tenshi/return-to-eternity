@@ -2348,7 +2348,6 @@ function showSec(id) {
     stopGuestListener();
   }
   if (id === 'novel') {
-    if (!isAdmin()) { alert('관리자 전용 페이지예요. (F2)'); showSec('home'); return; }
     setTimeout(updateNovelPreview, 50);
   }
   if (id === 'home') { renderDdays(); renderBanners(); renderHomeImage(); shimejiGreetSection('home'); }
