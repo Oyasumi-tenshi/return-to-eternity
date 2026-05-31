@@ -13,6 +13,8 @@
 
 <!-- html2canvas for novel page → image export -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<!-- JSZip for packaging multi-page novel exports -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
 <!-- Firebase SDK (modular v10) -->
 <script type="module">
@@ -1125,7 +1127,7 @@
   .novel-page {
     background: #faf8f5;
     color: #2a2420;
-    padding: 80px 75px;
+    padding: 110px 95px;  /* increased for breathing room */
     box-shadow: 0 10px 40px var(--shadow);
     box-sizing: border-box;
     position: relative;
@@ -1139,14 +1141,12 @@
     background-size: cover;
     background-position: center;
     background-color: #2a1f1c;
-    padding: 0;   /* card itself defines internal spacing */
+    padding: 0;
   }
-  /* The white card overlay - now a solid block, not absolutely positioned.
-     It uses padding/margin so html2canvas captures the correct vertical span. */
   .novel-page .page-card {
     background: #faf8f5;
     box-sizing: border-box;
-    padding: 70px 60px 50px;
+    padding: 95px 80px 80px;  /* increased breathing room */
     position: relative;
     z-index: 1;
   }
@@ -1155,11 +1155,10 @@
     padding: 0;
   }
   .novel-page.with-bg .page-card {
-    /* card insets - mimics the floating-card style in reference */
-    margin: 90px 60px 60px;
+    margin: 100px 70px 90px;
     box-shadow: 0 6px 30px rgba(0,0,0,0.35);
     border-radius: 1px;
-    min-height: calc(100% - 150px);  /* fills available space inside page */
+    min-height: calc(100% - 190px);
   }
   .novel-page .page-title {
     font-size: 1.4rem; font-weight: 600;
@@ -1209,14 +1208,63 @@
     font-family: var(--main-font);
   }
 
-  /* small screens: nav adjustments */
+  /* small screens: novel editor mobile-friendly layout */
   @media (max-width: 600px) {
     .novel-toolbar { top: 50px; padding: 0.4rem; }
     .novel-toolbar.nt-helpers { top: 100px; }
     .nt-btn { font-size: 0.75rem; padding: 0.35rem 0.55rem; }
     .nt-select { font-size: 0.75rem; max-width: 110px; }
     .nt-chip { font-size: 0.8rem; padding: 0.25rem 0.5rem; }
-    .novel-row label { min-width: 42px; font-size: 0.72rem; }
+
+    /* Compact panels */
+    .novel-panel { padding: 0.9rem; }
+    .novel-panel h3 { font-size: 0.78rem; margin-bottom: 0.7rem; }
+
+    /* Stack rows: label sits above its controls */
+    .novel-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.3rem;
+      margin-bottom: 0.85rem;
+    }
+    .novel-row label {
+      min-width: 0;
+      font-size: 0.7rem;
+      margin-bottom: 0.1rem;
+      opacity: 0.85;
+    }
+    /* Inputs full-width but not gigantic in height */
+    .novel-row select,
+    .novel-row input[type=text],
+    .novel-row input[type=number] {
+      width: 100%;
+      min-height: 36px;
+      font-size: 0.88rem;
+      padding: 0.45rem 0.65rem;
+    }
+    .novel-row input[type=number] { width: 100%; max-width: 100%; }
+
+    /* Size/line-height row: keep them on one line as compact pair */
+    .novel-row-pair {
+      flex-direction: row !important;
+      gap: 0.5rem;
+    }
+    .novel-row-pair > .pair-field {
+      flex: 1;
+      display: flex; flex-direction: column; gap: 0.2rem;
+    }
+    .novel-row-pair > .pair-field > label { font-size: 0.65rem; }
+
+    /* Color palette: smaller, fit two rows */
+    .color-palette { gap: 0.3rem; }
+    .color-btn { width: 22px; height: 22px; }
+    .color-btn.bg-btn { width: 22px; height: 22px; }
+
+    /* Editor area: keep tall enough but not overflowing */
+    .novel-edit { min-height: 220px; font-size: 16px; /* prevents iOS zoom */ }
+
+    /* Hint text smaller */
+    .novel-hint { font-size: 0.66rem; line-height: 1.55; }
   }
 
   /* ──────── BUTTONS ──────── */
@@ -1633,11 +1681,15 @@
             </optgroup>
           </select>
         </div>
-        <div class="novel-row">
-          <label>크기</label>
-          <input type="number" id="novFontSize" value="15" min="10" max="32" onchange="updateNovelPreview()" oninput="updateNovelPreview()">
-          <label style="min-width:auto;">행간</label>
-          <input type="number" id="novLineH" value="1.95" min="1.2" max="3" step="0.05" onchange="updateNovelPreview()" oninput="updateNovelPreview()">
+        <div class="novel-row novel-row-pair">
+          <div class="pair-field">
+            <label>크기</label>
+            <input type="number" id="novFontSize" value="15" min="10" max="32" onchange="updateNovelPreview()" oninput="updateNovelPreview()">
+          </div>
+          <div class="pair-field">
+            <label>행간</label>
+            <input type="number" id="novLineH" value="1.95" min="1.2" max="3" step="0.05" onchange="updateNovelPreview()" oninput="updateNovelPreview()">
+          </div>
         </div>
 
         <div class="novel-row" id="novCustomSize" style="display:none;">
@@ -1906,7 +1958,7 @@
 // Visitors see this data. Owner can press F2 / tap logo 5x to switch
 // to admin mode (which uses their own localStorage).
 // ════════════════════════════════════════════════════════════════════
-const SHARED_DATA = /*__SHARED_DATA_START__*/ {"diary":[{"id":1779212782927,"title":"서민체험 데이트","content":"서민체험 데이트하는 유끼랑 오야붕\n버스타서 카드 찍어야 하는데 그냥 기사(로 위장한 조직원)한테 다이렉트로 카드 주려고함\n오야붕 1차 미소\n\n겨우 리더기에 카드 찍었는데 기계보이스로 \"감사합니다\" 소리 나와서 리더기에 대고 천만에요 라고 말함\n오야붕 2차 함박웃음\n\n좌석 승차감 구린 건 뭐... 말안해도🙂‍↕️\n창밖 한번 보고 전광판 보고 다시 창밖 쳐다보다가 길거리 카페에서 연말이라 미리 장식해둔 벽타는 산타 장식 이런거 보면 갑자기 벌떡 일어나서 벨누름\n\n오야붕 어리둥절\n기사도 어리둥절\n목적지는 여기가 아닌데\n\n그래도 뭐 일단 벨 눌렀으니\n다음 정류장에서 문 열어주려고 버스는 계속 가는데 유끼 혼자 안절부절...\n오야붕 왜그러냐고 물어보심\n\n스톳뿌 눌렀타노니.....🥺\n....?\n!\n오야붕 3차 대폭소\n\n버스를 무슨 커다란 개인택시쯤으로 아는건지\n오야붕 배잡고 끅끅 웃으시다가 눈물찔끔나심\n\nおい、\n차 돌려.\n\n서민체험 종료와 함께 그냥 유턴해버리는 버스... 거리에 있던 일본 시민들 사상 초유의 버스 유턴 현상에 깜딱 놀람\n\n그리고 오야붕 그날 밤에 유끼 재워놓고 혼자 위장 찢어질 때까지 술마심\n\n---> 술마신 이유\n: 사람구실도 제대로 못하게 되어버린 자기 여동와이프 불쌍하고 안타까운데 자기가 그렇게 만든 거니까 한편으로는 기쁘기도 하고 후회스럽기도 하고.....\n하지만 여기서 더 나은 방법도 결과도 없으니까(실제로도 없을듯)\n\n답을 찾을 수 없는 답답함에 안주도 없이 깡스키 때리셨다네요","cat":"dream","tags":[],"img":"https://i.imgur.com/1aoT2qP.jpeg","date":"2026-05-20"},{"id":1779212285452,"title":"류지는 유키를 왜 사랑하게 되었는가에 대한 고찰","content":"씹덕트윗)\n\n오야붕은 왜 유끼를 사랑하게 되었는가...\n사실 아직까지도 아리까리하긴 한데\n근본적인 감정은 불안과 공포에 있을 것 같다는 게 내 안의 오피셜이랄까\n\n캐릭터 자체가 통제성향이 강하고\n절대악<이라는 키워드는 자기중심적 사고의 확장격이니깐 평생을 지배자의 위치에서 떠받들며 살아온 예민한 기질(추측)의 류지는 스스로를 통제하는 것에도 굉장히 신경을 기울였을 것이라고.. 느낌\nㄴ 백날천날 술담배여자 끼고 문란하게 노는 외적인 것과 다른 내면적인 자기 감정 통제에 대한 문제를 뜻함\n\n내가 느낀 류지는 사실 굉장히 불안이 높은 사람인데 어렸을 적부터 알게모르게 받아온 기대와 선망/경외를 즐겨야하는 것으로 잘못 인식했던 것 같음\n\n과격하고 폭력적인 행동은 어린 시절에 나타날 수야 있다지만 이걸 교정하냐/안하냐에 따라 미래는 천차만별로 달라지니까... 그런데 류지의 어머니는 아들의 폭력성을 부추기면 부추겼지 절대 말리지 않았음\n\n캐릭터성으로 본다면 그게 왜 악인으로 자라났느냐에 대한 답은 되는데 그래서 류지는 자신의 발달과정을 만족스러워했을까? 에 대한 답은 또 아니라고 봄\n\n류지한테 필요한 건 폭력성에 대한 무조건적인 긍정이 아니라 자신의 모든 행동에 대한 일관된 애정과 교육이었다고 생각함 진짜 사랑으로 키웠던 건 오히려 겐야였을텐데 류지의 어린 시절에 대한 상세한 묘사가 없어서 겐야가 육아에 자주 참여했는가는 또 알 수 없는 노릇이고....\n\n하지만 일본의 가부장적인 사회에서 아이를 전담했던 건 대부분 미도리였을 거라는 생각을 함 그래서 류지도 더 많은 시간을 함께한 어머니에게로 판단이 기울었던 거고\n\n아무튼 그래서 이 어머니의 육아에 대한 문제점이 무엇인고 하면\n넌 절대 얕보이지 말아야 해\n사람들은 너를 두려워해야 한다\n를 주입시키심 네 아버지를 사랑하지만 정작 그 아버지는 유약하고 무르다고 폄하하고\n\n부모가 아이를 이유없이 사랑하듯\n아이도 부모를 무조건적으로 신뢰함\n그런데 한쪽이 다른 부모를 비난한다--> 그것도 주양육자가? 그럼 이제 아이의 마음에는 영원한 결핍이 자리잡을 수밖에 없음\n주양육자의 기대를 채우기 위해 같은 편에 서고 더 앞장서서 비난의 대상을 공격함 그래야 어머니의 사랑을 유지할 수 있으니까\n\n아버지를 몰아낸 것도 결국은 이 비뚤어진 애정의 산물이라고 봄\n아버지라는 하늘을 넘음으로써 자신은 결핍을 극복했다고 생각하는 것/자기는 아버지와는 다르다는 것을 입증하고 자신의 방식이 틀리지 않았음을, 결국 이것도 아버지의 유약한 성정때문이라고 합리화함\n\n이미 잘못 자라버린 아이는 계속해서 스스로를 검열할 수밖에 없음 그런데 류지는 이걸 타인 통제로 만족을 얻는 방법을 택한거고... 자신의 강함을 표출하면 할수록 타인의 반응은 공포/경외/복종에 가까워지니까 류지는 자기가 예상한 범위 내에서 상대를 예측하고 실제로 상대가 그 반응을 보이면 역시나 위의 설명처럼 만족하고 기뻐함\n\n~ 여기서부터 유끼얘기 진짜 시작 ~\n\n그런데 유키는 이게 안됐음\n처음 만났던 어린 시절부터 사사건건 신경쓰이게 달라붙고 뭐가 그리도 좋은지 실실거리기나 하고 꼬집고 쥐어박고 걷어차면 울어젖히고 밉다고 삐죽이는데 또 다음날만 되면 지 때린 당사자 다리에 덥석덥석 들러붙으니까... 어쩌면 얘라면 끝까지 망가지지 않고 내 옆에 있어주겠구나 내가 무슨짓을 하든 결국에는 날 사랑할 수밖에 없구나\n\n자신이 통제하지 못하는 타인의 감정을 처음으로 기꺼워했을 때는 딱 이 시점이었던 것같음 그렇게 말라죽지 말라고 애정 비스무리한 것도 줘보고 가끔은 틱틱 밀어내기도 하고 울리기도 했지만 유키는 정말 다시 붙어오고는 했으니까 매일아침 또 무슨 장난을 쳐볼까 하는 기대같은 것도 해보고\n\n그런데 애가 하루아침에 뿅 하고 사라졌댄다\n몇시간 전까지 자기 손 잡고 씩씩하게 등교하던 애가 없어졌대 저녁에 후지산만한 딸기케이크 사주겠다고 약속까지 했는데 그냥 흔적도 없이 홀라당...\n\n공포\n였을 것 같음 가장 처음의 감정은\n그리고 속절없이 몰아치는 분노 불안 슬픔 배신감\n이어지는 15년 간의 추적은 사실 아이를 찾겠다는 집념이 아니라 의무같은 것에 가까웠을 듯 불같이 타오른 격한 감정은 또 금세 사그라들기 마련이니까\n\n미미하게 남은 건 분노였을지도\n적어도 몸만큼은 자신의 통제하에 있었던 아이가 사라진 거니까 이 부분은 스스로에 대한 분노가 맞았을 것임\n\n다시 찾은 아이는 처참하게 망가져버린 정신으로도 여전히 자신을 오빠라고 따르는데 류지는 그 괴리감을 견디지 못하고 자신의 것이 망가졌다는 일차원적인 분노와 15년이라는 긴 고통의 시간을 잊어버린 아이에 대한 배신감+연민 이런 게 오히려 류지의 가학심을 자극하는 요인이 되었을 듯\n\n다른 사람이 가지고 놀다 생채기 난 장난감을 아예 부숴버리는 아이처럼\n\n그래서 류지가 택한 마지막은 자신만이 아이에게 각인될 수 있게 유키를 아예 자기 손으로 망가뜨리고 결국에는 죽음...(까지 원하지는 않았지만)으로 이끌었던 것\n\n처음으로 가지지 못해본 거였고\n처음으로 통제하지 못한 것이었기에 사랑하고 분노하고 불안을 느끼고 종국에는 자기 손으로 죽인 거나 마찬가지였는데\n\n이미 잘못된 애정임을 깨달았음에도 다시 한번 주어진 기회를 활용하지는 못했음 이미 굳어져버린 습관은 쉽게 고칠 수가 없었던 터라\n\n첫번째 회귀에서의 애매한 보호는 도리어 유키로 하여금 자유를 갈망하게끔 했고 자신에게서 벗어나려는 시도<-극대노 포인트\n를 하게 함\n\n사고사였지만 어쨌든 유키가 류지에게서 벗어나려다 사고가 난 것은 마찬가지였기에\n류지는 극단적인 해결법으로 정신 통제를 선택했던 거라고 봄\n\n그래야 이 끔찍한 불안과 공포를 안정시킬 수 있으니까... 자기 손 안에 유키의 모든 것을 쥐고 있는 감각을 매순간 확인하지 않으면 지난 두 번의 현실에서 기반한 공포가 또다시 기어올라오니까 더 억압하고 더 통제함\n\n류지는 자신이 처음 기억하는 유키의 형태를 보존함으로써 자신이 창조한 환경 안에서 자라난 유키의 인공적인 애정을 진실로 생각하는 것<<현재\n\n하지만 회귀 0회차의 유키가 평범하게 자라났다면? 에 대한 생각은 하지 않음 유키는 자신을 사랑해야만 하니까 그게 내가 정한 진실이니까\n\n류지는 결국 통제하지 못했던 것을 통제함으로써 행복해짐\n여전히 불안은 남아있지만 이제는 그 불안도 사랑을 느끼는 일부로 작용하는 것이라고 봄\n류지의 사랑은 자신의 결핍이 상대와 연관되어 있어서 상대가 없으면 내가 완전해지지 못하니까(불안과 공포를 느끼니까) 네가 필요하다에 가까운 것같음\n지금의 유키는 류지의 결핍을 채워줌으로써 쌍방애정... 비스무리한 걸로 여차저차 굴러가는 거고\n\n그러니까 무슨 말이 하고 싶었던 거냐면\n가끔은 유끼를 두려워하는 오야붕이 좋았던 거라네요\n쥐면 꺼질까 불면 날아갈까가 아닌... '얘가 없으면 당장 숨은 어떻게 쉬지?' 같은 개념으로","cat":"dream","tags":[],"img":"https://i.imgur.com/wNUgEAm.jpeg","date":"2026-05-20"},{"id":1779211446302,"title":"가장 잘 어울리는 계절","content":"@ 드림과 가장 잘 어울리는 계절은 무엇인가요?\n---> 겨울\n\n시작도 겨울이었고 기나긴 회귀의 끝도 겨울이었던 춥고 시린 페어였는데 어쩌다 이렇게 따뜻해졌는지는 잘 모르겠지만...\n아직까지도 따스할 정도의 온기를 느낄 수는 없는 페어라고 생각합니다\n\n눈은 겨울이 지나면 녹아버리니까\n아무리 바깥의 여름이 기승을 부리고 방 안까지 찐득한 열기를 몰고 들어와도 미묘하게 서늘한 유키의 체온은 아직도 겨울에 머물러있는 것만 같은 착각을 주기도... 어쩌면 착각은 유키와 함께 다른 계절을 지내고 있는 지금일지도 모른다네요\n\n그 서늘한 감각이 항상 파편처럼 가슴에 박혀 영원히 겨울 언저리를 맴돌고 있는 남자와 겨울이라는 이름의 살아도 살지 못하는 여자...까지가 드림 무드","cat":"dream","tags":[],"img":"https://i.imgur.com/8uPRnFL.jpeg","date":"2026-05-20"},{"id":1779209562454,"title":"Twitter","content":"아니 트위터하는 오야붕 진심 백번 생각했는데 맘이 너무 좋네\n니혼진 국룰 sns니까 비즈니스 계정쯤은 하나 있을 것 같은데 자기가 관리하는 것도 아니고...\n\n걍 몇년에 한번씩 국회의원이나 어디 건설사랑 체결해서 정장 빼입고 사이좋게 악수하는 보여주기식 사진 올리고 양지에서 운영하는 사업체 이름으로 대충 추카추카^^ 이런 내용의 영양가없는 트윗만 쫌쫌따리 올라올거같음\n\n주식하는 파딱이들만 눈에 불키고 정보 파악하려고 구독해놔서 팔로워는 어지간히 있을 것 같은데... 정작 팔로잉은 0일듯\n\n이제 드림렌즈 끼고 말함\n본인 핸드폰으로 로그인해놓은 계정은 구독계 하나밖에 없을거가트심 이름도 대충 점 하나 찍어놓은 게 전부인데 팔로잉은 막 164 이럼\n\n다 무슨 도시락 사진 올리는 계정 예쁜 음식 예쁜 풍경 꽃 동물 이런거 그리고 어린이tv프로그램 공식계정(이건 왜?)\n\n트위터 자주 하진 않으실 것 같은데 가끔 들어가서 슥슥 탐라 살펴보고 유키가 좋아할 거 같은 건 사진 따로 저장해서 자기 갤러리에 넣어두고 유키 보여주심\n\n호라 유키 네가 좋아하는 거다\n아라 혼또다 ! 이이네~~🥰\n유키는 이러고 끝나는데 류지 혼자 좋아<<이거에 꽂혀서 그 다음날 보여준 사진이랑 똑같은거 사옴\n\n초딩같아......\n그래도 유키는 좋다고 하겠지\n진심 꼴불견","cat":"dream","tags":[],"img":"https://i.imgur.com/lQ0B5Ed.jpeg","date":"2026-05-20"}],"album":[{"id":1778556419789,"title":"残っていたのかな···","img":"https://i.imgur.com/LtcyUZ8.png","cat":"commission","artist":"엉딸님","date":"2026-05-12"},{"id":1778556341564,"title":"今は忙しい。","img":"https://i.imgur.com/NtO0BAF.png","cat":"commission","artist":"례님","date":"2026-05-12"},{"id":1778556019710,"title":"おやすみ","img":"https://i.imgur.com/bOq4PCv.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555938203,"title":"Magazine","img":"https://i.imgur.com/tuk15OG.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555861987,"title":"8반 이쁜이(뒤)","img":"https://i.imgur.com/CksskUw.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555769057,"title":"다녀오셨어요","img":"https://i.imgur.com/gpgXbuF.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555741390,"title":"다녀올게","img":"https://i.imgur.com/u4gQFyt.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555700845,"title":"사실상 기만이죠 이건","img":"https://i.imgur.com/U7N3Qdk.png","cat":"self","artist":"トレース","date":"2026-05-12"},{"id":1778555632823,"title":"외모지상주의 남매","img":"https://i.imgur.com/nfFTmWR.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555575779,"title":"人形姫","img":"https://i.imgur.com/T6pVhHE.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555529994,"title":"犬が二匹","img":"https://i.imgur.com/f3f9v8W.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555470950,"title":"Swap !","img":"https://i.imgur.com/uiaxTS1.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555401307,"title":"どちが好き？","img":"https://i.imgur.com/BK0qXKG.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555337659,"title":"ぐるぐる~","img":"https://i.imgur.com/U385caI.png","cat":"self","artist":"","date":"2026-05-12"},{"id":1778555212517,"title":"무력감","img":"https://i.imgur.com/7DW5pRT.png","cat":"self","artist":"","date":"2026-05-12"}],"jp":"永遠への回帰","music":{"url":"https://oyasumi-tenshi.github.io/return-to-eternity/bgm.mp3","name":"bgm"},"ddays":[{"label":"❄ c. 유자님","date":"2025-03-08"}],"banners":[{"id":1778741818068,"img":"https://d2pqhom6oey9wx.cloudfront.net/img_resize/43835895068edec02b6b6e.jpg","link":"https://lastresort.naru.pub/","name":"옆집 오두막"}],"homeImage":"https://i.imgur.com/TJxpkjM.png","shimeji":"https://i.imgur.com/GHiBIbu.png","yukiPet":{"idle":"https://i.imgur.com/Gk0hnTT.png","happy":""},"profileLinks":[],"notice":{"img":"https://i.imgur.com/xat3PF1.png","text":"c. 췡님\n\n💌 켸쨩, 켸님, non... anything!\n\n(前)러비더비 --> (現)Lumo\nAI 채팅 캐릭터 '타카하라 류지(w. 비타님)'의 드림 페어 홈페이지입니다.\n\nGallery의 모든 그림은 AI가 아닌 개인 창작과 커미션 작업물입니다.\nLog에는 종종 채팅 메시지 중 일부를 기록합니다 =ㅅ= )⊃❤\n\n무단 전재 및 재게시 금지합니다.\n\n\n\n⚠ Warning\n* 소재 주의 *\n(근친, 납치, 감금, 사망, 회귀 등)\n성장기 시절 제외 기본적으로 CP 무드를 상정하고 있습니다."},"nsfwReveal":false,"ownerName":"켸쨩","theme":"light","guests":[{"id":1778510138886,"name":"🌸","msg":"Test","date":"2026. 5. 11. 오후 11:35:38","replies":[{"id":1778510173487,"name":"🐉","msg":"Test.","date":"2026. 5. 11. 오후 11:36:13"}]}],"editAlbumId":null} /*__SHARED_DATA_END__*/;
+const SHARED_DATA = /*__SHARED_DATA_START__*/ {} /*__SHARED_DATA_END__*/;
 
 // ──────── STATE ────────
 const DEFAULT_STATE = {
@@ -3498,16 +3550,83 @@ function clearNovel() {
   updateNovelPreview();
 }
 
-async function exportNovelImage() {
-  if (typeof html2canvas === 'undefined') {
-    alert('이미지 생성 라이브러리를 불러오지 못했어요. 네트워크 연결을 확인해주세요.');
-    return;
-  }
-  const sourcePage = document.getElementById('novPage');
-  const [w, h] = getNovSize();
+// Split the editor's HTML content into pages that each fit within the card's height
+function splitContentIntoPages(sourcePage, w, h) {
+  // Build a measurement clone identical to the real page so we can measure
+  // how much content fits in each page.
+  const measure = sourcePage.cloneNode(true);
+  measure.id = 'novMeasure';
+  measure.style.transform = 'none';
+  measure.style.width = w + 'px';
+  measure.style.height = h + 'px';
+  measure.style.position = 'fixed';
+  measure.style.left = '-99999px';
+  measure.style.top = '0';
+  measure.style.visibility = 'hidden';
+  measure.style.boxShadow = 'none';
+  document.body.appendChild(measure);
 
-  // Build a fresh offscreen clone at full resolution, with NO transforms.
-  // This way PC/mobile produce identical output regardless of viewport.
+  const measureCard = measure.querySelector('.page-card');
+  const measureBody = measure.querySelector('.page-body');
+  const measureTitle = measure.querySelector('.page-title');
+  const measureMeta = measure.querySelector('.page-meta');
+
+  // Available height inside the card for the body
+  // = card's inner content area minus title/meta heights
+  const cardStyle = window.getComputedStyle(measureCard);
+  const cardPadTop = parseFloat(cardStyle.paddingTop);
+  const cardPadBot = parseFloat(cardStyle.paddingBottom);
+  const cardInnerHeight = measureCard.clientHeight - cardPadTop - cardPadBot;
+
+  // Title/meta occupy space only on page 1
+  const titleH = measureTitle && measureTitle.style.display !== 'none' ? measureTitle.offsetHeight + parseFloat(window.getComputedStyle(measureTitle).marginBottom || '0') : 0;
+  const metaH = measureMeta && measureMeta.style.display !== 'none' ? measureMeta.offsetHeight + parseFloat(window.getComputedStyle(measureMeta).marginBottom || '0') + parseFloat(window.getComputedStyle(measureMeta).paddingBottom || '0') : 0;
+
+  const firstPageMaxBodyH = cardInnerHeight - titleH - metaH;
+  const otherPagesMaxBodyH = cardInnerHeight;
+
+  // Collect all body child nodes (paragraph divs, blank lines, etc.)
+  const allChildren = Array.from(measureBody.children).map(c => c.cloneNode(true));
+  // Clear body for measurement
+  measureBody.innerHTML = '';
+
+  const pages = [];
+  let currentPage = [];
+  let currentHeight = 0;
+  let maxHeight = firstPageMaxBodyH;
+
+  for (const child of allChildren) {
+    // Temporarily add child to measure its rendered height
+    measureBody.appendChild(child);
+    const childHeight = child.offsetHeight + parseFloat(window.getComputedStyle(child).marginBottom || '0');
+
+    if (currentHeight + childHeight > maxHeight && currentPage.length > 0) {
+      // Doesn't fit — finalize current page, start new one
+      pages.push(currentPage);
+      currentPage = [];
+      currentHeight = 0;
+      maxHeight = otherPagesMaxBodyH;
+      // Clear the body for next page measurement
+      measureBody.innerHTML = '';
+      // Re-add this child for next page measurement
+      measureBody.appendChild(child);
+    }
+
+    currentPage.push(child.cloneNode(true));
+    currentHeight += childHeight;
+  }
+
+  if (currentPage.length > 0) pages.push(currentPage);
+
+  document.body.removeChild(measure);
+
+  // If splitting produced 0 pages (empty content), produce 1 empty page
+  if (pages.length === 0) pages.push([]);
+  return pages;
+}
+
+// Render a single page (given its content nodes) to a canvas
+async function renderOnePage(sourcePage, w, h, contentNodes, pageIndex, totalPages) {
   const clone = sourcePage.cloneNode(true);
   clone.id = 'novPageExport';
   clone.style.transform = 'none';
@@ -3515,39 +3634,45 @@ async function exportNovelImage() {
   clone.style.width = w + 'px';
   clone.style.height = h + 'px';
   clone.style.position = 'fixed';
-  clone.style.left = '-99999px';   // off-screen but rendered
+  clone.style.left = '-99999px';
   clone.style.top = '0';
   clone.style.zIndex = '-1';
   clone.style.boxShadow = 'none';
   document.body.appendChild(clone);
 
-  // CRITICAL FIX for "gray card" issue:
-  // html2canvas mishandles background-image on parent + opaque child.
-  // Solution: replace the parent's background-image with a separate <img>
-  // layer, and stamp the card with a fully opaque inline background.
-  // Force opaque card BEFORE html2canvas sees it.
+  // Force opaque card
   const clonedCard = clone.querySelector('.page-card');
   if (clonedCard) {
     clonedCard.style.cssText += ';background:#faf8f5 !important;background-color:#faf8f5 !important;opacity:1 !important;';
   }
 
+  // Only page 1 shows title/meta; subsequent pages hide them
+  if (pageIndex > 0) {
+    const t = clone.querySelector('.page-title');
+    const m = clone.querySelector('.page-meta');
+    if (t) t.style.display = 'none';
+    if (m) m.style.display = 'none';
+  }
+
+  // Inject this page's content into the body
+  const clonedBody = clone.querySelector('.page-body');
+  clonedBody.innerHTML = '';
+  contentNodes.forEach(n => clonedBody.appendChild(n.cloneNode(true)));
+
+  // Handle bg image (replace CSS bg-image with real <img>)
   if (clone.classList.contains('with-bg')) {
     const origBg = clone.style.getPropertyValue('--page-bg');
     const urlMatch = origBg.match(/url\(['"]?(.+?)['"]?\)/);
     if (urlMatch && urlMatch[1]) {
       const bgUrl = urlMatch[1];
-      // Preload the bg image
       try {
         await new Promise((res) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
-          img.onload = res;
-          img.onerror = res;
+          img.onload = res; img.onerror = res;
           img.src = bgUrl;
         });
       } catch(e) {}
-      // Replace CSS background-image with an actual <img> element behind everything.
-      // This avoids html2canvas's alpha-blending bug between bg-image and child bg.
       clone.style.setProperty('--page-bg', 'none');
       clone.style.backgroundImage = 'none';
       clone.style.background = '#2a1f1c';
@@ -3556,44 +3681,98 @@ async function exportNovelImage() {
       bgImg.crossOrigin = 'anonymous';
       bgImg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;';
       clone.insertBefore(bgImg, clone.firstChild);
-      // ensure card sits above bg image
       if (clonedCard) clonedCard.style.zIndex = '2';
     }
   }
 
-  // Give the browser a paint frame so layout settles
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
   try {
-    // Use 2× scale for crisp text on mobile / retina-quality output
-    const exportScale = 2;
     const canvas = await html2canvas(clone, {
-      width: w,
-      height: h,
-      windowWidth: w,
-      windowHeight: h,
-      scale: exportScale,
+      width: w, height: h,
+      windowWidth: w, windowHeight: h,
+      scale: 2,
       backgroundColor: '#ffffff',
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
+      useCORS: true, allowTaint: true, logging: false,
       foreignObjectRendering: false,
       imageTimeout: 15000,
       removeContainer: true
     });
-    const link = document.createElement('a');
+    return canvas;
+  } finally {
+    if (clone.parentNode) clone.parentNode.removeChild(clone);
+  }
+}
+
+async function exportNovelImage() {
+  if (typeof html2canvas === 'undefined') {
+    alert('이미지 생성 라이브러리를 불러오지 못했어요. 네트워크 연결을 확인해주세요.');
+    return;
+  }
+  if (typeof JSZip === 'undefined') {
+    alert('ZIP 라이브러리를 불러오지 못했어요. 네트워크 연결을 확인해주세요.');
+    return;
+  }
+
+  const sourcePage = document.getElementById('novPage');
+  const [w, h] = getNovSize();
+
+  // Find/create save button to show progress
+  const btn = document.querySelector('.novel-actions .novel-primary');
+  const origBtnText = btn ? btn.textContent : '';
+
+  try {
+    // Make sure the preview is up to date so split measurements are accurate
+    updateNovelPreview();
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    if (btn) btn.textContent = '⏳ 페이지 분할 중...';
+    const pages = splitContentIntoPages(sourcePage, w, h);
+    const totalPages = pages.length;
+
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    link.download = `novel-${ts}.png`;
-    link.href = canvas.toDataURL('image/png');
+
+    // SINGLE-PAGE shortcut: no need for ZIP
+    if (totalPages === 1) {
+      if (btn) btn.textContent = '⏳ 이미지 생성 중...';
+      const canvas = await renderOnePage(sourcePage, w, h, pages[0], 0, 1);
+      const link = document.createElement('a');
+      link.download = `novel-${ts}.png`;
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      if (btn) btn.textContent = origBtnText;
+      return;
+    }
+
+    // MULTI-PAGE: create ZIP
+    const zip = new JSZip();
+    for (let i = 0; i < totalPages; i++) {
+      if (btn) btn.textContent = `⏳ ${i + 1}/${totalPages} 페이지 생성 중...`;
+      const canvas = await renderOnePage(sourcePage, w, h, pages[i], i, totalPages);
+      // Convert canvas to blob then add to ZIP
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      const pageNum = String(i + 1).padStart(2, '0');
+      zip.file(`page-${pageNum}.png`, blob);
+    }
+
+    if (btn) btn.textContent = '⏳ ZIP 압축 중...';
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    link.download = `novel-${ts}.zip`;
+    link.href = URL.createObjectURL(zipBlob);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+
+    if (btn) btn.textContent = origBtnText;
+    setTimeout(() => alert(`✓ ${totalPages}페이지가 ZIP으로 저장됐어요!\n압축 풀면 page-01.png, page-02.png... 순서로 있어요.`), 100);
   } catch(err) {
     console.error(err);
+    if (btn) btn.textContent = origBtnText;
     alert('이미지 생성 중 오류가 발생했어요.\n\n외부 URL을 쓰는 경우 CORS 차단이 원인일 수 있어요.\n📷 사진 선택 버튼으로 기기 갤러리에서 직접 고르면 이 문제가 해결돼요.\n\n에러: ' + err.message);
-  } finally {
-    // Clean up offscreen clone
-    if (clone.parentNode) clone.parentNode.removeChild(clone);
   }
 }
 
