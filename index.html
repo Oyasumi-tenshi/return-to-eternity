@@ -3677,10 +3677,27 @@ function clearNovel() {
   updateNovelPreview();
 }
 
-// Split the editor's HTML content into pages that each fit within the card's height
+// Split the editor's HTML content into pages that each fit within the page's body area.
+// IMPORTANT: available height is derived from the FIXED page height (h), not from the
+// card's clientHeight (which grows with content and would never trigger a split).
 function splitContentIntoPages(sourcePage, w, h) {
-  // Build a measurement clone identical to the real page so we can measure
-  // how much content fits in each page.
+  const isWithBg = sourcePage.classList.contains('with-bg');
+
+  // Compute the vertical space available for body text on a page.
+  // Page total height = h.  Subtract the chrome (paddings / card margins) above & below the body.
+  let topChrome, bottomChrome;
+  if (isWithBg) {
+    // page padding:0; card margin 100 top / 90 bottom; card padding 95 top / 80 bottom
+    topChrome = 100 + 95;
+    bottomChrome = 90 + 80;
+  } else {
+    // page padding 110 top/bottom; card padding 0
+    topChrome = 110;
+    bottomChrome = 110;
+  }
+  const bodyAreaHeight = h - topChrome - bottomChrome;
+
+  // Measurement clone to get accurate per-paragraph heights at the real width.
   const measure = sourcePage.cloneNode(true);
   measure.id = 'novMeasure';
   measure.style.transform = 'none';
@@ -3689,32 +3706,24 @@ function splitContentIntoPages(sourcePage, w, h) {
   measure.style.position = 'fixed';
   measure.style.left = '-99999px';
   measure.style.top = '0';
-  measure.style.opacity = '0';          // opacity:0 (not visibility) keeps layout measurable on mobile
+  measure.style.opacity = '0';
   measure.style.pointerEvents = 'none';
   measure.style.boxShadow = 'none';
   document.body.appendChild(measure);
 
-  const measureCard = measure.querySelector('.page-card');
   const measureBody = measure.querySelector('.page-body');
   const measureTitle = measure.querySelector('.page-title');
   const measureMeta = measure.querySelector('.page-meta');
 
-  // Copy over the exact font + size from the live page so measurements match render
-  const livePage = sourcePage;
-  const liveBody = livePage.querySelector('.page-body');
-  measure.style.fontFamily = livePage.style.fontFamily || window.getComputedStyle(livePage).fontFamily;
+  // Match font/size/line-height to the live page
+  const liveBody = sourcePage.querySelector('.page-body');
+  measure.style.fontFamily = sourcePage.style.fontFamily || window.getComputedStyle(sourcePage).fontFamily;
   if (measureBody && liveBody) {
     measureBody.style.fontSize = liveBody.style.fontSize || window.getComputedStyle(liveBody).fontSize;
     measureBody.style.lineHeight = liveBody.style.lineHeight || window.getComputedStyle(liveBody).lineHeight;
   }
 
-  // Available height inside the card for the body
-  const cardStyle = window.getComputedStyle(measureCard);
-  const cardPadTop = parseFloat(cardStyle.paddingTop) || 0;
-  const cardPadBot = parseFloat(cardStyle.paddingBottom) || 0;
-  const cardInnerHeight = measureCard.clientHeight - cardPadTop - cardPadBot;
-
-  // Title/meta occupy space only on page 1
+  // Title/meta height (only consumes space on page 1)
   let titleH = 0, metaH = 0;
   if (measureTitle && measureTitle.style.display !== 'none' && measureTitle.textContent.trim()) {
     const ts = window.getComputedStyle(measureTitle);
@@ -3725,43 +3734,42 @@ function splitContentIntoPages(sourcePage, w, h) {
     metaH = measureMeta.offsetHeight + (parseFloat(ms.marginBottom) || 0) + (parseFloat(ms.paddingBottom) || 0);
   }
 
-  const firstPageMaxBodyH = cardInnerHeight - titleH - metaH;
-  const otherPagesMaxBodyH = cardInnerHeight;
+  const firstPageMaxBodyH = Math.max(50, bodyAreaHeight - titleH - metaH);
+  const otherPagesMaxBodyH = Math.max(50, bodyAreaHeight);
 
-  // Collect all body child nodes (paragraph divs, blank lines, etc.)
+  // Measure each child's height individually (append one at a time)
   const allChildren = Array.from(measureBody.children).map(c => c.cloneNode(true));
   measureBody.innerHTML = '';
 
+  const childHeights = [];
+  for (const child of allChildren) {
+    measureBody.appendChild(child);
+    const cs = window.getComputedStyle(child);
+    const ch = child.offsetHeight + (parseFloat(cs.marginBottom) || 0) + (parseFloat(cs.marginTop) || 0);
+    childHeights.push(ch);
+  }
+  measureBody.innerHTML = '';
+  document.body.removeChild(measure);
+
+  // Pack children into pages based on measured heights
   const pages = [];
   let currentPage = [];
   let currentHeight = 0;
   let maxHeight = firstPageMaxBodyH;
 
-  for (const child of allChildren) {
-    measureBody.appendChild(child);
-    const cs = window.getComputedStyle(child);
-    const childHeight = child.offsetHeight + (parseFloat(cs.marginBottom) || 0) + (parseFloat(cs.marginTop) || 0);
+  for (let i = 0; i < allChildren.length; i++) {
+    const childHeight = childHeights[i];
 
     if (currentHeight + childHeight > maxHeight && currentPage.length > 0) {
-      // Doesn't fit — finalize current page, start new one
       pages.push(currentPage);
       currentPage = [];
       currentHeight = 0;
       maxHeight = otherPagesMaxBodyH;
-      measureBody.innerHTML = '';
-      measureBody.appendChild(child);
     }
-
-    // Edge case: a single paragraph taller than a whole page.
-    // Keep it on its own page (can't split mid-paragraph reliably).
-    currentPage.push(child.cloneNode(true));
+    currentPage.push(allChildren[i].cloneNode(true));
     currentHeight += childHeight;
   }
-
   if (currentPage.length > 0) pages.push(currentPage);
-
-  document.body.removeChild(measure);
-
   if (pages.length === 0) pages.push([]);
   return pages;
 }
